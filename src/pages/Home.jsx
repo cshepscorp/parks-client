@@ -25,26 +25,41 @@ function Home() {
 
   return (
     <div className="max-w-6xl mx-auto px-6">
-      <div className="flex flex-col items-center text-center py-16 gap-6">
-        <h1 className="text-5xl font-bold tracking-tight">
+      <div
+        className="flex flex-col items-center text-center py-32 gap-6 rounded-2xl mb-12 relative overflow-hidden"
+        style={{
+          backgroundImage: 'url(https://www.nps.gov/common/uploads/structured_data/68BFC1AC-BF96-629F-89D261D78F181C64.jpg)',
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+        }}
+      >
+        {/* dark overlay so text is readable */}
+        <div className="absolute inset-0 bg-black/50 rounded-2xl" />
+
+        {/* content needs z-10 to sit above the overlay */}
+        <h1 className="text-5xl font-bold tracking-tight text-white relative z-10">
           Discover America's Parks
         </h1>
-        <p className="text-xl text-muted-foreground max-w-2xl">
+        <p className="text-xl text-white/80 max-w-2xl relative z-10">
           Search, save, and plan road trips to national and state parks across the US.
         </p>
-        <form onSubmit={handleSearch} className="flex gap-2 w-full max-w-lg">
+        <form onSubmit={handleSearch} className="flex gap-2 w-full max-w-lg relative z-10">
           <input
             type="text"
             placeholder="Search parks..."
             value={query}
             onChange={e => setQuery(e.target.value)}
-            className="flex-1 px-4 py-2 rounded-md border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+            className="flex-1 px-4 py-2 rounded-md border border-white/30 bg-white/20 text-white placeholder:text-white/60 text-sm focus:outline-none focus:ring-2 focus:ring-white/50 backdrop-blur-sm"
           />
-          <Button type="submit">Search</Button>
+          <Button type="submit" className="bg-white text-black hover:bg-white/90">Search</Button>
         </form>
         {user && (
-          <Button asChild variant="outline">
-            <Link to="/trips">My Trips</Link>
+          <Button
+            variant="outline"
+            className="border-2 border-white text-white bg-white/20 hover:bg-white hover:text-black relative z-10 backdrop-blur-sm"
+            onClick={() => navigate('/trips')}
+          >
+            My Trips
           </Button>
         )}
       </div>

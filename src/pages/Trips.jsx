@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Button } from '@/components/ui/button';
 import { useAuth } from '../hooks/useAuth';
 
 function Trips() {
@@ -98,44 +99,57 @@ function Trips() {
     if (error) return <p>{error}</p>;
 
     return (
-        <div>
-            <h2>Trips</h2>
+  <div className="max-w-4xl mx-auto px-6 py-8">
+    <div className="flex items-center justify-between mb-8">
+      <h1 className="text-3xl font-bold">My Trips</h1>
+    </div>
 
-            {/* filter existing trips */}
-            <input
-                type="text"
-                placeholder="Filter trips..."
-                value={query}
-                onChange={e => setQuery(e.target.value)}
-            />
+    <div className="flex gap-3 mb-8">
+      <input
+        type="text"
+        placeholder="Filter trips..."
+        value={query}
+        onChange={e => setQuery(e.target.value)}
+        className="flex-1 px-4 py-2 rounded-md border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+      />
+      <input
+        type="text"
+        placeholder="New trip name..."
+        value={newTripName}
+        onChange={e => setNewTripName(e.target.value)}
+        className="flex-1 px-4 py-2 rounded-md border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+      />
+      <Button onClick={handleCreateTrip}>Create Trip</Button>
+    </div>
 
-            {/* create new trip */}
-            <input
-                type="text"
-                placeholder="Trip name..."
-                value={newTripName}
-                onChange={e => setNewTripName(e.target.value)}
-            />
-
-            <button onClick={handleCreateTrip}>Add a new trip</button>
-            {filteredTrips.length > 0 ? (
-                filteredTrips.map(trip => (
-                    // <TripCard key={park.id} park={park} /> // doesn't exist yet
-                    <div key={trip.id}>
-                        <h3>{trip.name}</h3>
-                        <p>{new Date(trip.createdAt).toLocaleDateString()}</p>
-                        <button onClick={() => handleDeleteTrip(trip)}>Delete this trip</button>
-                    </div>
-                ))
-            ) : (
-                <p>You have no saved trips! Why not create one today?</p>
-            )}
-
+    {filteredTrips.length > 0 ? (
+      <div className="flex flex-col gap-4">
+        {filteredTrips.map(trip => (
+          <div key={trip.id} className="bg-card border border-border rounded-xl p-5 flex items-center justify-between">
             <div>
-
+              <h3 className="font-semibold text-base">{trip.name}</h3>
+              <p className="text-xs text-muted-foreground mt-1">
+                Created {new Date(trip.createdAt).toLocaleDateString()}
+              </p>
             </div>
-        </div>
-    );
+            <Button
+              variant="destructive"
+              size="sm"
+              onClick={() => handleDeleteTrip(trip)}
+            >
+              Delete
+            </Button>
+          </div>
+        ))}
+      </div>
+    ) : (
+      <div className="text-center py-16">
+        <p className="text-muted-foreground text-lg mb-4">You have no saved trips yet.</p>
+        <p className="text-sm text-muted-foreground">Search for parks and start planning your adventure.</p>
+      </div>
+    )}
+  </div>
+);
 }
 
 export default Trips;
