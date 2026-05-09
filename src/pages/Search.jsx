@@ -1,9 +1,11 @@
 import { useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useDebounce } from '../hooks/useDebounce';
 import ParkCard from '../components/ParkCard';
 
 function Search() {
-  const [query, setQuery] = useState('');
+  const [searchParams] = useSearchParams();
+  const [query, setQuery] = useState(searchParams.get('q') || '');
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -23,6 +25,7 @@ function Search() {
         const response = await fetch(`${import.meta.env.VITE_API_URL}/api/parks?q=${debouncedQuery}`);
         console.log('API url', `${import.meta.env.VITE_API_URL}/api/parks?q=${debouncedQuery}`)
         const data = await response.json();
+        console.log(data.data)
         setResults(data.data)
       } catch (error) {
         setError('Failed to fetch parks');
@@ -35,18 +38,21 @@ function Search() {
   }, [debouncedQuery])
 
   return (
-    <div>
-      <input
-        type="text"
-        placeholder="Search parks..."
-        value={query}
-        onChange={e => setQuery(e.target.value)}
-      />
+    <div className="max-w-6xl mx-auto px-6 py-8">
+      <div className="flex gap-4 mb-8">
+        <input
+          type="text"
+          placeholder="Search parks..."
+          value={query}
+          onChange={e => setQuery(e.target.value)}
+          className="flex-1 px-4 py-2 rounded-md border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+        />
+      </div>
 
-      {loading && <p>Searching...</p>}
-      {error && <p>{error}</p>}
+      {loading && <p className="text-muted-foreground">Searching...</p>}
+      {error && <p className="text-destructive">{error}</p>}
 
-      <div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
         {results.map(park => (
           <ParkCard key={park.id} park={park} />
         ))}

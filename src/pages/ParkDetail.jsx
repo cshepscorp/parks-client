@@ -27,7 +27,7 @@ function ParkDetail() {
         getPark();
     }, [parkCode])
 
-    console.log("park", park)
+    // console.log("park", park)
 
     if (loading) return <p>Loading...</p>;
     if (error) return <p>{error}</p>;

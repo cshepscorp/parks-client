@@ -1,7 +1,8 @@
 import { useState } from "react";
-
 import { Link } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 
 function ParkCard({ park }) {
     const { user } = useAuth();
@@ -35,21 +36,43 @@ function ParkCard({ park }) {
     };
 
     return (
-        <div>
-            {user ? (
-                <button onClick={handleFavoritesClick}>
-                    {isFavorite ? 'Favorited ★' : 'Add to Faves'}
-                </button>
-            ) : (
-                <a href={`${import.meta.env.VITE_API_URL}/auth/google`}>Sign in to favorite</a>
-            )}
-            <Link to={`/parks/${park.parkCode}`}>
-                <h2>{park.fullName}</h2>
-            </Link>
-            <p>{park.states}</p>
-            <p>{park.description}</p>
-        </div>
-    );
+    <Card className="flex flex-col h-full hover:shadow-md transition-shadow">
+      {park.images?.[0] && (
+        <img
+          src={park.images[0].url}
+          alt={park.images[0].altText}
+          className="w-full h-48 object-cover rounded-t-lg"
+        />
+      )}
+      <CardHeader className="pb-2">
+        <Link to={`/parks/${park.parkCode}`}>
+          <CardTitle className="text-base hover:text-primary transition-colors line-clamp-2">
+            {park.fullName}
+          </CardTitle>
+        </Link>
+        <p className="text-xs text-muted-foreground">{park.states}</p>
+      </CardHeader>
+      <CardContent className="flex-1">
+        <p className="text-sm text-muted-foreground line-clamp-3">{park.description}</p>
+      </CardContent>
+      <CardFooter>
+        {user ? (
+          <Button
+            variant={isFavorite ? 'secondary' : 'outline'}
+            size="sm"
+            onClick={handleFavoritesClick}
+            className="w-full"
+          >
+            {isFavorite ? '★ Favorited' : '☆ Add to Favorites'}
+          </Button>
+        ) : (
+          <Button asChild variant="outline" size="sm" className="w-full">
+            <a href={`${import.meta.env.VITE_API_URL}/auth/google`}>Sign in to favorite</a>
+          </Button>
+        )}
+      </CardFooter>
+    </Card>
+  );
 }
 
 export default ParkCard;
