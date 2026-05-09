@@ -27,15 +27,42 @@ function Trips() {
                     name: newTripName,
                 })
             });
-            const data = await response.json();
-
             if (!response.ok) {
                 throw new Error('Failed to create trip')
             }
+
+            const data = await response.json();
+
             setTrips([...trips, data]);
             setNewTripName(''); // reset input
         } catch (error) {
             console.error('Failed to create trip:', error);
+        }
+    }
+
+    const handleDeleteTrip = async (trip) => {
+        if (!trip) {
+            return;
+        };
+
+        const confirmed = window.confirm(`Are you sure you want to delete "${trip.name}"?`);
+        if (!confirmed) return;
+
+        // POST call to /api/trips with newTripName
+        try {
+            const response = await fetch(`${import.meta.env.VITE_API_URL}/api/trips/${trip.id}`, {
+                method: 'DELETE',
+                credentials: 'include',
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to create trip')
+            }
+            const data = await response.json();
+
+            setTrips(trips.filter(t => t.id !== trip.id));
+        } catch (error) {
+            console.error('Failed to delete trip:', error);
         }
     }
 
@@ -97,6 +124,7 @@ function Trips() {
                     <div key={trip.id}>
                         <h3>{trip.name}</h3>
                         <p>{new Date(trip.createdAt).toLocaleDateString()}</p>
+                        <button onClick={() => handleDeleteTrip(trip)}>Delete this trip</button>
                     </div>
                 ))
             ) : (
