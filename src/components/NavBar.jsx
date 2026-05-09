@@ -7,6 +7,7 @@ function NavBar() {
         <div>
             <Link to='/'>Parks App</Link>
             <Link to='/search'>Search App</Link>
+            <Link to='/trips'>Trips</Link>
             {user ? (
                 <a href={`${import.meta.env.VITE_API_URL}/auth/logout`}>Log out</a>
             ) : (

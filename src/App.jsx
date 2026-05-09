@@ -3,6 +3,7 @@ import Home from './pages/Home'
 import Search from './pages/Search'
 import NavBar from './components/NavBar';
 import ParkDetail from './pages/ParkDetail'
+import Trips from './pages/Trips';
 
 function App() {
   return (
@@ -12,6 +13,7 @@ function App() {
       <Route path='/' element={<Home />} />
       <Route path='/search' element={<Search />} />
       <Route path="/parks/:parkCode" element={<ParkDetail />} />
+      <Route path="/trips" element={<Trips />} />
     </Routes>
     </>
   );
