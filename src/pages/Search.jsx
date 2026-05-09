@@ -49,11 +49,6 @@ function Search() {
       <div>
         {results.map(park => (
           <ParkCard key={park.id} park={park} />
-          // <div key={park.id}>
-
-          //   <h2>{park.fullName}</h2>
-          //   <p>{park.states}</p>
-          // </div>
         ))}
       </div>
     </div>
