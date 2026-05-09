@@ -94,19 +94,27 @@ npm run dev
 - [x] useAuth hook — calls /auth/me on load
 - [x] NavBar — shows Sign in/Log out based on auth state
 - [x] Home page placeholder
-- [x] Search page placeholder
-- [ ] Search page — input, results list, map
-- [ ] ParkCard component
-- [ ] Park detail page
+- [x] Search page — debounced input, calls GET /api/parks?q=keyword, renders results
+- [x] ParkCard component — shows name, states, description, favorite button
+- [x] Park detail page — full park info from GET /api/parks/:parkCode
+- [x] Favorites button — POST /api/favorites, toggles to "Favorited ★" on success
 - [ ] Trips page
-- [ ] Favorites page
+- [ ] Map integration (Mapbox)
+- [ ] Styling pass — everything is unstyled, functional only
+- [ ] Load user's existing favorites on search page so favorited parks show correctly on load
+
+## Known issues / next session notes
+
+- Favorite button shows "Add to Faves" on every page load even if already favorited
+  — needs GET /api/favorites on mount to check existing favorites
+- NavBar items running together — needs CSS spacing
+- No loading state shown during park detail fetch
+- console.log statements cleaned up in favorites.js but double check parks.js
 
 ## Next steps
 
-1. Build search page — input calls GET /api/parks?q=keyword
-2. Build ParkCard component for search results
-3. Add map integration (Mapbox or Google Maps)
-4. Build park detail page
-5. Connect favorites button to POST /api/favorites
-6. Build trips page
-7. Consider Claude Design for initial UI prototyping
+1. Trips page — list user's saved trips, create new trip
+2. Map integration — Mapbox with synchronized pins on search results
+3. Styling pass — consider Claude Design for prototyping the visual design
+4. Load existing favorites on search page mount
+5. Add favorite button to ParkDetail page too
