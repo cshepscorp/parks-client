@@ -24,9 +24,9 @@ function Home() {
   };
 
   return (
-    <div className="max-w-6xl mx-auto px-6">
+    <>
       <div
-        className="flex flex-col items-center text-center py-32 gap-6 rounded-2xl mb-12 relative overflow-hidden"
+        className="flex flex-col items-center text-center py-32 gap-6 mb-12 relative overflow-hidden"
         style={{
           backgroundImage: 'url(https://www.nps.gov/common/uploads/structured_data/68BFC1AC-BF96-629F-89D261D78F181C64.jpg)',
           backgroundSize: 'cover',
@@ -34,7 +34,7 @@ function Home() {
         }}
       >
         {/* dark overlay so text is readable */}
-        <div className="absolute inset-0 bg-black/50 rounded-2xl" />
+        <div className="absolute inset-0 bg-black/50" />
 
         {/* content needs z-10 to sit above the overlay */}
         <h1 className="text-5xl font-bold tracking-tight text-white relative z-10">
@@ -64,15 +64,17 @@ function Home() {
         )}
       </div>
 
-      <div className="mb-6">
-        <h2 className="text-2xl font-semibold mb-6">Featured Parks</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {parks.map(park => (
-            <ParkCard key={park.id} park={park} />
-          ))}
+      <div className="max-w-6xl mx-auto px-6">
+        <div className="mb-6">
+          <h2 className="text-2xl font-semibold mb-6">Featured Parks</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {parks.map(park => (
+              <ParkCard key={park.id} park={park} />
+            ))}
+          </div>
         </div>
       </div>
-    </div>
+    </>
   );
 }
 
