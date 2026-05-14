@@ -27,13 +27,19 @@ function NavBar() {
             </Link>
           )}
           {user ? (
-            <Button asChild variant="outline" size="sm">
-              <a href={`${import.meta.env.VITE_API_URL}/auth/logout`}>Log out</a>
-            </Button>
+            <a
+              href={`${import.meta.env.VITE_API_URL}/auth/logout`}
+              className="inline-flex items-center justify-center px-3 py-1.5 text-sm border border-input rounded-md hover:bg-accent transition-colors"
+            >
+              Log out
+            </a>
           ) : (
-            <Button asChild size="sm">
-              <a href={`${import.meta.env.VITE_API_URL}/auth/google`}>Sign in with Google</a>
-            </Button>
+            <a
+              href={`${import.meta.env.VITE_API_URL}/auth/google`}
+              className="inline-flex items-center justify-center px-3 py-1.5 text-sm bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors"
+            >
+              Sign in with Google
+            </a>
           )}
         </div>
 

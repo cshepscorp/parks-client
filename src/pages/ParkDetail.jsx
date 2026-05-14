@@ -80,6 +80,12 @@ function ParkDetail({ initialIsFavorite = false }) {
                 })
             });
 
+            if (response.status === 409) {
+                // already in trip — just mark it as added in UI
+                setAddedToTrips(prev => [...prev, tripId]);
+                return;
+            }
+
             if (!response.ok) {
                 throw new Error(`Error status: ${response.status}, something went wrong. Failed to add to trip.`)
             }
@@ -96,9 +102,16 @@ function ParkDetail({ initialIsFavorite = false }) {
             credentials: 'include'
         })
             .then(res => res.json())
-            .then(data => setTrips(data))
+            .then(data => {
+                setTrips(data);
+                // check which trips already contain this park
+                const alreadyAdded = data
+                    .filter(trip => trip.tripParks.some(tp => tp.park.npsId === parkCode))
+                    .map(trip => trip.id);
+                setAddedToTrips(alreadyAdded);
+            })
             .catch(err => console.error('Failed to load trips:', err));
-    }, [user]);
+    }, [user, parkCode]);
 
     useEffect(() => {
         const getPark = async () => {
@@ -118,13 +131,12 @@ function ParkDetail({ initialIsFavorite = false }) {
         getPark();
     }, [parkCode]);
 
-    if (loading) return <p>Loading...</p>;
-    if (error) return <p>{error}</p>;
+    if (loading) return <p className="max-w-4xl mx-auto px-6 py-8">Loading...</p>;
+    if (error) return <p className="max-w-4xl mx-auto px-6 py-8">{error}</p>;
     if (!park) return null;
 
     return (
         <div className="max-w-4xl mx-auto px-6 py-8">
-
             {park.images?.[0] && (
                 <img
                     src={park.images[0].url}
@@ -144,8 +156,8 @@ function ParkDetail({ initialIsFavorite = false }) {
                 {user && (
                     <div className="flex items-center gap-3 mt-1">
                         <Popover>
-                            <PopoverTrigger asChild>
-                                <Button variant="outline" size="sm">+ Add to Trip</Button>
+                            <PopoverTrigger className="inline-flex items-center gap-1 px-3 py-1.5 text-sm border border-input rounded-md hover:bg-accent transition-colors">
+                                + Add to Trip
                             </PopoverTrigger>
                             <PopoverContent className="w-56 p-2">
                                 {trips.length === 0 ? (
@@ -156,7 +168,10 @@ function ParkDetail({ initialIsFavorite = false }) {
                                             <button
                                                 key={trip.id}
                                                 onClick={() => handleAddToTrip(trip.id)}
-                                                className={`text-left px-3 py-2 rounded-md text-sm hover:bg-accent transition-colors ${addedToTrips.includes(trip.id) ? 'text-muted-foreground' : ''
+                                                disabled={addedToTrips.includes(trip.id)}
+                                                className={`text-left px-3 py-2 rounded-md text-sm transition-colors w-full ${addedToTrips.includes(trip.id)
+                                                    ? 'text-muted-foreground cursor-not-allowed'
+                                                    : 'hover:bg-accent cursor-pointer'
                                                     }`}
                                             >
                                                 {addedToTrips.includes(trip.id) ? '✓ ' : ''}{trip.name}
