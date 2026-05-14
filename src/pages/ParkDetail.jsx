@@ -1,12 +1,104 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
+import { Heart } from 'lucide-react';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Button } from '@/components/ui/button';
 
-function ParkDetail() {
+import { useAuth } from '../hooks/useAuth';
+
+function ParkDetail({ initialIsFavorite = false }) {
     const { parkCode } = useParams();
-
+    const { user } = useAuth();
     const [park, setPark] = useState(null);
+    const [isFavorite, setIsFavorite] = useState(initialIsFavorite);
+    const [trips, setTrips] = useState([]);
+    const [addedToTrips, setAddedToTrips] = useState([]); // track which trips this park was added to
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
+
+    const handleFavoritesClick = async (e) => {
+        e.stopPropagation(); // prevents the card click from firing when clicking the button
+        try {
+            if (isFavorite) {
+                // remove from favorites
+                const response = await fetch(`${import.meta.env.VITE_API_URL}/api/favorites/${park.parkCode}`, {
+                    method: 'DELETE',
+                    credentials: 'include',
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Error status: ${response.status}, something went wrong`)
+                }
+                setIsFavorite(false);
+                // if (handleUnfavorite) {
+                //     handleUnfavorite();
+                // }
+            } else {
+                const response = await fetch(`${import.meta.env.VITE_API_URL}/api/favorites`, {
+                    method: 'POST',
+                    credentials: 'include',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        npsId: park.parkCode,
+                        name: park.fullName,
+                        states: park.states,
+                        latitude: park.latitude,
+                        longitude: park.longitude,
+                        description: park.description,
+                        imageUrl: park.images?.[0]?.url || null,
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Error status: ${response.status}, something went wrong`)
+                }
+                setIsFavorite(true);
+            }
+        } catch (error) {
+            console.error('Failed to add favorite:', error);
+        }
+    };
+
+    const handleAddToTrip = async (tripId) => {
+        try {
+            const response = await fetch(`${import.meta.env.VITE_API_URL}/api/trips/${tripId}/parks`, {
+                method: 'POST',
+                credentials: 'include',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    npsId: park.parkCode,
+                    name: park.fullName,
+                    states: park.states,
+                    latitude: park.latitude,
+                    longitude: park.longitude,
+                    description: park.description,
+                    imageUrl: park.images?.[0]?.url || null,
+                })
+            });
+
+            if (!response.ok) {
+                throw new Error(`Error status: ${response.status}, something went wrong. Failed to add to trip.`)
+            }
+            setAddedToTrips(prev => [...prev, tripId]);
+        } catch (error) {
+            console.error('Failed to add park to trip:', error);
+        }
+
+    };
+
+    useEffect(() => {
+        if (!user) return;
+        fetch(`${import.meta.env.VITE_API_URL}/api/trips`, {
+            credentials: 'include'
+        })
+            .then(res => res.json())
+            .then(data => setTrips(data))
+            .catch(err => console.error('Failed to load trips:', err));
+    }, [user]);
 
     useEffect(() => {
         const getPark = async () => {
@@ -41,11 +133,50 @@ function ParkDetail() {
                 />
             )}
 
-            <div className="mb-6">
-                <h1 className="text-4xl font-bold mb-2">{park.fullName}</h1>
-                <p className="text-muted-foreground text-sm uppercase tracking-wide">
-                    {park.designation} · {park.states}
-                </p>
+            <div className="mb-6 relative flex items-start justify-between">
+                <div>
+                    <h1 className="text-4xl font-bold mb-2">{park.fullName}</h1>
+                    <p className="text-muted-foreground text-sm uppercase tracking-wide">
+                        {park.designation} · {park.states}
+                    </p>
+                </div>
+
+                {user && (
+                    <div className="flex items-center gap-3 mt-1">
+                        <Popover>
+                            <PopoverTrigger asChild>
+                                <Button variant="outline" size="sm">+ Add to Trip</Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-56 p-2">
+                                {trips.length === 0 ? (
+                                    <p className="text-sm text-muted-foreground p-2">No trips yet. Create one first.</p>
+                                ) : (
+                                    <div className="flex flex-col gap-1">
+                                        {trips.map(trip => (
+                                            <button
+                                                key={trip.id}
+                                                onClick={() => handleAddToTrip(trip.id)}
+                                                className={`text-left px-3 py-2 rounded-md text-sm hover:bg-accent transition-colors ${addedToTrips.includes(trip.id) ? 'text-muted-foreground' : ''
+                                                    }`}
+                                            >
+                                                {addedToTrips.includes(trip.id) ? '✓ ' : ''}{trip.name}
+                                            </button>
+                                        ))}
+                                    </div>
+                                )}
+                            </PopoverContent>
+                        </Popover>
+
+                        <button
+                            onClick={handleFavoritesClick}
+                            className="p-1.5 hover:scale-110 transition-transform"
+                        >
+                            <Heart
+                                className={`w-6 h-6 ${isFavorite ? 'text-red-500 fill-red-500' : 'text-gray-300 fill-gray-300'}`}
+                            />
+                        </button>
+                    </div>
+                )}
             </div>
 
             <p className="text-base leading-relaxed mb-8">{park.description}</p>

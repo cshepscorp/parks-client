@@ -2,6 +2,7 @@ import { useEffect, useState, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useDebounce } from '../hooks/useDebounce';
 import ParkCard from '../components/ParkCard';
+// import { mockParks } from '../api/mockParks';
 
 function Search() {
   const [searchParams] = useSearchParams();
@@ -23,6 +24,7 @@ function Search() {
       const response = await fetch(`${import.meta.env.VITE_API_URL}/api/parks?q=${searchQuery}&start=${startIndex}&limit=9`);
       const data = await response.json();
       const newParks = data.data || [];
+      // const newParks = mockParks;
       setResults(prev => startIndex === 0 ? newParks : [...prev, ...newParks]);
       setStart(startIndex + 9)
       setHasMore(newParks.length === 9);

@@ -13,7 +13,7 @@ function ParkCard({ park, isFavorite: initialIsFavorite = false, handleUnfavorit
     try {
       if (isFavorite) {
         // remove from favorites
-        const response = await fetch(`${import.meta.env.VITE_API_URL}/api/favorites/${park.parkId}`, {
+        const response = await fetch(`${import.meta.env.VITE_API_URL}/api/favorites/${park.parkCode}`, {
           method: 'DELETE',
           credentials: 'include',
         });

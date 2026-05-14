@@ -1,12 +1,14 @@
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '../hooks/useAuth';
 import { useState, useEffect } from 'react';
 import ParkCard from '@/components/ParkCard';
+// import { mockParks } from '../api/mockParks';
 
 function Home() {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const [loading, setLoading] = useState(false);
   const [query, setQuery] = useState('');
   const [parks, setParks] = useState([]);
   const [start, setStart] = useState(0);
@@ -17,6 +19,7 @@ function Home() {
     const res = await fetch(`${import.meta.env.VITE_API_URL}/api/parks?limit=${LIMIT}&start=${startIndex}`);
     const data = await res.json();
     const newParks = data.data || [];
+    // const newParks = mockParks;
 
     setParks(prev => startIndex === 0 ? newParks : [...prev, ...newParks]);
     setStart(startIndex + LIMIT);
@@ -78,6 +81,11 @@ function Home() {
       <div className="max-w-6xl mx-auto px-6">
         <div className="mb-6">
           <h2 className="text-2xl font-semibold mb-6">Featured Parks</h2>
+          {!loading && parks.length === 0 && (
+            <div className="text-center py-16">
+              <p className="text-muted-foreground">Unable to load parks right now. Try refreshing.</p>
+            </div>
+          )}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {parks.map(park => (
               <ParkCard key={park.id} park={park} />
