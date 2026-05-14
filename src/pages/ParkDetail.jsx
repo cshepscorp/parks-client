@@ -136,122 +136,248 @@ function ParkDetail({ initialIsFavorite = false }) {
     if (!park) return null;
 
     return (
-        <div className="max-w-4xl mx-auto px-6 py-8">
-            {park.images?.[0] && (
-                <img
-                    src={park.images[0].url}
-                    alt={park.images[0].altText}
-                    className="w-full h-72 object-cover rounded-xl mb-8"
-                />
-            )}
+  <div>
+    {/* Full bleed hero */}
+    <div className="relative h-96 w-full">
+      {park.images?.[0] ? (
+        <img
+          src={park.images[0].url}
+          alt={park.images[0].altText}
+          className="w-full h-full object-cover"
+        />
+      ) : (
+        <div className="w-full h-full bg-gradient-to-br from-stone-700 to-stone-900" />
+      )}
+      {/* gradient overlay */}
+      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
 
-            <div className="mb-6 relative flex items-start justify-between">
-                <div>
-                    <h1 className="text-4xl font-bold mb-2">{park.fullName}</h1>
-                    <p className="text-muted-foreground text-sm uppercase tracking-wide">
-                        {park.designation} · {park.states}
-                    </p>
+      {/* park name overlaid on image */}
+      <div className="absolute bottom-0 left-0 right-0 p-8 max-w-4xl mx-auto">
+        <h1 className="text-5xl font-bold text-white mb-2">{park.fullName}</h1>
+        <p className="text-white/70 text-sm uppercase tracking-wide">
+          {park.designation} · {park.states}
+        </p>
+      </div>
+
+      {/* action buttons overlaid top right */}
+      {user && (
+        <div className="absolute top-4 right-4 flex items-center gap-2">
+          <Popover>
+            <PopoverTrigger className="inline-flex items-center gap-1 px-3 py-1.5 text-sm bg-black/40 backdrop-blur-sm text-white border border-white/20 rounded-md hover:bg-black/60 transition-colors">
+              + Add to Trip
+            </PopoverTrigger>
+            <PopoverContent className="w-56 p-2">
+              {trips.length === 0 ? (
+                <p className="text-sm text-muted-foreground p-2">No trips yet. Create one first.</p>
+              ) : (
+                <div className="flex flex-col gap-1">
+                  {trips.map(trip => (
+                    <button
+                      key={trip.id}
+                      onClick={() => !addedToTrips.includes(trip.id) && handleAddToTrip(trip.id)}
+                      disabled={addedToTrips.includes(trip.id)}
+                      className={`text-left px-3 py-2 rounded-md text-sm transition-colors w-full ${
+                        addedToTrips.includes(trip.id)
+                          ? 'text-muted-foreground cursor-not-allowed'
+                          : 'hover:bg-accent cursor-pointer'
+                      }`}
+                    >
+                      {addedToTrips.includes(trip.id) ? '✓ ' : ''}{trip.name}
+                    </button>
+                  ))}
                 </div>
+              )}
+            </PopoverContent>
+          </Popover>
 
-                {user && (
-                    <div className="flex items-center gap-3 mt-1">
-                        <Popover>
-                            <PopoverTrigger className="inline-flex items-center gap-1 px-3 py-1.5 text-sm border border-input rounded-md hover:bg-accent transition-colors">
-                                + Add to Trip
-                            </PopoverTrigger>
-                            <PopoverContent className="w-56 p-2">
-                                {trips.length === 0 ? (
-                                    <p className="text-sm text-muted-foreground p-2">No trips yet. Create one first.</p>
-                                ) : (
-                                    <div className="flex flex-col gap-1">
-                                        {trips.map(trip => (
-                                            <button
-                                                key={trip.id}
-                                                onClick={() => handleAddToTrip(trip.id)}
-                                                disabled={addedToTrips.includes(trip.id)}
-                                                className={`text-left px-3 py-2 rounded-md text-sm transition-colors w-full ${addedToTrips.includes(trip.id)
-                                                    ? 'text-muted-foreground cursor-not-allowed'
-                                                    : 'hover:bg-accent cursor-pointer'
-                                                    }`}
-                                            >
-                                                {addedToTrips.includes(trip.id) ? '✓ ' : ''}{trip.name}
-                                            </button>
-                                        ))}
-                                    </div>
-                                )}
-                            </PopoverContent>
-                        </Popover>
-
-                        <button
-                            onClick={handleFavoritesClick}
-                            className="p-1.5 hover:scale-110 transition-transform"
-                        >
-                            <Heart
-                                className={`w-6 h-6 ${isFavorite ? 'text-red-500 fill-red-500' : 'text-gray-300 fill-gray-300'}`}
-                            />
-                        </button>
-                    </div>
-                )}
-            </div>
-
-            <p className="text-base leading-relaxed mb-8">{park.description}</p>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-
-                <div className="bg-card border border-border rounded-xl p-5">
-                    <h2 className="font-semibold mb-3">Weather</h2>
-                    <p className="text-sm text-muted-foreground leading-relaxed">{park.weatherInfo}</p>
-                </div>
-
-                <div className="bg-card border border-border rounded-xl p-5">
-                    <h2 className="font-semibold mb-3">Directions</h2>
-                    <p className="text-sm text-muted-foreground leading-relaxed">{park.directionsInfo}</p>
-                    {park.directionsUrl && (
-                        <a
-                            href={park.directionsUrl}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="text-sm text-primary hover:underline mt-2 inline-block"
-                        >
-                            Get directions →
-                        </a>
-                    )}
-                </div>
-
-            </div>
-
-            {park.entranceFees?.length > 0 && (
-                <div className="bg-card border border-border rounded-xl p-5 mb-8">
-                    <h2 className="font-semibold mb-3">Entrance Fees</h2>
-                    <div className="flex flex-col gap-3">
-                        {park.entranceFees.map((fee, i) => (
-                            <div key={i} className="flex justify-between text-sm">
-                                <span className="text-muted-foreground">{fee.title}</span>
-                                <span className="font-medium">${fee.cost}</span>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-            )}
-
-            {park.activities?.length > 0 && (
-                <div>
-                    <h2 className="font-semibold mb-3">Activities</h2>
-                    <div className="flex flex-wrap gap-2">
-                        {park.activities.map(activity => (
-                            <span
-                                key={activity.id}
-                                className="text-xs bg-secondary text-secondary-foreground px-3 py-1 rounded-full"
-                            >
-                                {activity.name}
-                            </span>
-                        ))}
-                    </div>
-                </div>
-            )}
-
+          <button
+            onClick={handleFavoritesClick}
+            className="p-2 bg-black/40 backdrop-blur-sm border border-white/20 rounded-md hover:bg-black/60 transition-colors"
+          >
+            <Heart
+              className={`w-5 h-5 ${isFavorite ? 'text-red-500 fill-red-500' : 'text-white fill-white'}`}
+            />
+          </button>
         </div>
-    );
+      )}
+    </div>
+
+    {/* content */}
+    <div className="max-w-4xl mx-auto px-6 py-8">
+      <p className="text-base leading-relaxed mb-8">{park.description}</p>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+        <div className="bg-card border border-border rounded-xl p-5">
+          <h2 className="font-semibold mb-3">Weather</h2>
+          <p className="text-sm text-muted-foreground leading-relaxed">{park.weatherInfo}</p>
+        </div>
+
+        <div className="bg-card border border-border rounded-xl p-5">
+          <h2 className="font-semibold mb-3">Directions</h2>
+          <p className="text-sm text-muted-foreground leading-relaxed">{park.directionsInfo}</p>
+          {park.directionsUrl && (
+            <a
+              href={park.directionsUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="text-sm text-primary hover:underline mt-2 inline-block"
+            >
+              Get directions →
+            </a>
+          )}
+        </div>
+      </div>
+
+      {park.entranceFees?.length > 0 && (
+        <div className="bg-card border border-border rounded-xl p-5 mb-8">
+          <h2 className="font-semibold mb-3">Entrance Fees</h2>
+          <div className="flex flex-col gap-3">
+            {park.entranceFees.map((fee, i) => (
+              <div key={i} className="flex justify-between text-sm">
+                <span className="text-muted-foreground">{fee.title}</span>
+                <span className="font-medium">${fee.cost}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {park.activities?.length > 0 && (
+        <div>
+          <h2 className="font-semibold mb-3">Activities</h2>
+          <div className="flex flex-wrap gap-2">
+            {park.activities.map(activity => (
+              <span
+                key={activity.id}
+                className="text-xs bg-secondary text-secondary-foreground px-3 py-1 rounded-full"
+              >
+                {activity.name}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  </div>
+)
+
+    // return (
+    //     <div className="max-w-4xl mx-auto px-6 py-8">
+    //         {park.images?.[0] && (
+    //             <img
+    //                 src={park.images[0].url}
+    //                 alt={park.images[0].altText}
+    //                 className="w-full h-72 object-cover rounded-xl mb-8"
+    //             />
+    //         )}
+
+    //         <div className="mb-6 relative flex items-start justify-between">
+    //             <div>
+    //                 <h1 className="text-4xl font-bold mb-2">{park.fullName}</h1>
+    //                 <p className="text-muted-foreground text-sm uppercase tracking-wide">
+    //                     {park.designation} · {park.states}
+    //                 </p>
+    //             </div>
+
+    //             {user && (
+    //                 <div className="flex items-center gap-3 mt-1">
+    //                     <Popover>
+    //                         <PopoverTrigger className="inline-flex items-center gap-1 px-3 py-1.5 text-sm border border-input rounded-md hover:bg-accent transition-colors">
+    //                             + Add to Trip
+    //                         </PopoverTrigger>
+    //                         <PopoverContent className="w-56 p-2">
+    //                             {trips.length === 0 ? (
+    //                                 <p className="text-sm text-muted-foreground p-2">No trips yet. Create one first.</p>
+    //                             ) : (
+    //                                 <div className="flex flex-col gap-1">
+    //                                     {trips.map(trip => (
+    //                                         <button
+    //                                             key={trip.id}
+    //                                             onClick={() => handleAddToTrip(trip.id)}
+    //                                             disabled={addedToTrips.includes(trip.id)}
+    //                                             className={`text-left px-3 py-2 rounded-md text-sm transition-colors w-full ${addedToTrips.includes(trip.id)
+    //                                                 ? 'text-muted-foreground cursor-not-allowed'
+    //                                                 : 'hover:bg-accent cursor-pointer'
+    //                                                 }`}
+    //                                         >
+    //                                             {addedToTrips.includes(trip.id) ? '✓ ' : ''}{trip.name}
+    //                                         </button>
+    //                                     ))}
+    //                                 </div>
+    //                             )}
+    //                         </PopoverContent>
+    //                     </Popover>
+
+    //                     <button
+    //                         onClick={handleFavoritesClick}
+    //                         className="p-1.5 hover:scale-110 transition-transform"
+    //                     >
+    //                         <Heart
+    //                             className={`w-6 h-6 ${isFavorite ? 'text-red-500 fill-red-500' : 'text-gray-300 fill-gray-300'}`}
+    //                         />
+    //                     </button>
+    //                 </div>
+    //             )}
+    //         </div>
+
+    //         <p className="text-base leading-relaxed mb-8">{park.description}</p>
+
+    //         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+
+    //             <div className="bg-card border border-border rounded-xl p-5">
+    //                 <h2 className="font-semibold mb-3">Weather</h2>
+    //                 <p className="text-sm text-muted-foreground leading-relaxed">{park.weatherInfo}</p>
+    //             </div>
+
+    //             <div className="bg-card border border-border rounded-xl p-5">
+    //                 <h2 className="font-semibold mb-3">Directions</h2>
+    //                 <p className="text-sm text-muted-foreground leading-relaxed">{park.directionsInfo}</p>
+    //                 {park.directionsUrl && (
+    //                     <a
+    //                         href={park.directionsUrl}
+    //                         target="_blank"
+    //                         rel="noreferrer"
+    //                         className="text-sm text-primary hover:underline mt-2 inline-block"
+    //                     >
+    //                         Get directions →
+    //                     </a>
+    //                 )}
+    //             </div>
+
+    //         </div>
+
+    //         {park.entranceFees?.length > 0 && (
+    //             <div className="bg-card border border-border rounded-xl p-5 mb-8">
+    //                 <h2 className="font-semibold mb-3">Entrance Fees</h2>
+    //                 <div className="flex flex-col gap-3">
+    //                     {park.entranceFees.map((fee, i) => (
+    //                         <div key={i} className="flex justify-between text-sm">
+    //                             <span className="text-muted-foreground">{fee.title}</span>
+    //                             <span className="font-medium">${fee.cost}</span>
+    //                         </div>
+    //                     ))}
+    //                 </div>
+    //             </div>
+    //         )}
+
+    //         {park.activities?.length > 0 && (
+    //             <div>
+    //                 <h2 className="font-semibold mb-3">Activities</h2>
+    //                 <div className="flex flex-wrap gap-2">
+    //                     {park.activities.map(activity => (
+    //                         <span
+    //                             key={activity.id}
+    //                             className="text-xs bg-secondary text-secondary-foreground px-3 py-1 rounded-full"
+    //                         >
+    //                             {activity.name}
+    //                         </span>
+    //                     ))}
+    //                 </div>
+    //             </div>
+    //         )}
+
+    //     </div>
+    // );
 }
 
 export default ParkDetail;
