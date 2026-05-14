@@ -12,13 +12,18 @@ function ParkCard({ park, isFavorite: initialIsFavorite = false, handleUnfavorit
   const handleFavoritesClick = async (e) => {
     e.stopPropagation(); // prevents the card click from firing when clicking the button
     try {
+      console.log('favoriting park:', {
+        npsId: park.parkCode,
+        name: park.fullName,
+        imageUrl: park.images?.[0]?.url || null
+      });
       if (isFavorite) {
         // remove from favorites
         const response = await fetch(`${import.meta.env.VITE_API_URL}/api/favorites/${park.parkId}`, {
           method: 'DELETE',
           credentials: 'include',
         });
-        
+
         if (!response.ok) {
           throw new Error(`Error status: ${response.status}, something went wrong`)
         }
