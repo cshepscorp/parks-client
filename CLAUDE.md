@@ -6,9 +6,7 @@ Built with React + Vite. Talks to the `parks-api` Express backend.
 ## Project overview
 
 A trip planning app that lets users search national and state parks, save
-favorites, and plan road trips with ordered stops and drive time estimates.
-This repo is the **React frontend only**. The Express backend lives in a
-separate repo (`parks-api`).
+favorites, and plan road trips with ordered stops. This repo is the **React frontend only**. The Express backend lives in a separate repo (`parks-api`).
 
 ## Tech stack
 
@@ -17,14 +15,14 @@ separate repo (`parks-api`).
 | Framework | React + Vite | Learn the layers explicitly — separate from backend |
 | Routing | React Router v6 | Standard client-side routing |
 | Auth state | Context API + useAuth hook | Global auth state without extra libraries |
-| Styling | TBD — considering Claude Design for prototyping |  |
-| Map | TBD — Mapbox or Google Maps | |
+| Styling | Shadcn/ui + Tailwind CSS | Component library with Luma/Olive preset |
+| Icons | Lucide React | Included with Shadcn |
 
 ## Environment
 
 - Node.js v24.14.1
 - Runs on port 5174 locally (5173 in use by another project)
-- Backend runs on port 3000
+- Backend runs on port 3000 locally, `https://api.christinasheppard.com` in production
 
 ## Environment variables
 
@@ -39,12 +37,14 @@ VITE_API_URL=http://localhost:3000
 
 ```
 src/
-  components/    ← reusable UI (NavBar, ParkCard, etc)
-  pages/         ← page components (Home, Search, etc)
-  hooks/         ← useAuth.jsx and future custom hooks
-  api/           ← functions that call the Express backend
-  App.jsx        ← routes defined here
-  main.jsx       ← BrowserRouter + AuthProvider wrap here
+  components/      ← NavBar, ParkCard
+  components/ui/   ← Shadcn components (button, card, popover, alert-dialog, etc)
+  pages/           ← Home, Search, ParkDetail, Trips, Favorites
+  hooks/           ← useAuth.jsx, useDebounce.js
+  api/             ← mockParks.js (for dev when NPS rate limited)
+  lib/             ← utils.js (Shadcn cn helper)
+  App.jsx          ← routes defined here
+  main.jsx         ← BrowserRouter + AuthProvider wrap here
 ```
 
 ## Key conventions
@@ -52,7 +52,7 @@ src/
 **Routing**
 - `<Link to='/path'>` — for internal React routes
 - `<a href='url'>` — for Express server URLs or external links
-- Routes are defined in `App.jsx` using `<Routes>` and `<Route>`
+- Routes defined in `App.jsx`: /, /search, /parks/:parkCode, /trips, /favorites
 
 **Auth**
 - Auth state lives in `AuthProvider` — wraps the whole app in `main.jsx`
@@ -60,8 +60,8 @@ src/
 - `user` is null if not logged in, or `{ userId, email, iat, exp }` if logged in
 - On app load, `useAuth` calls `GET /auth/me` to check auth state
 - `credentials: 'include'` is required on ALL fetch calls that need auth
-- Sign in → redirect to `VITE_API_URL/auth/google` (Express handles OAuth)
-- Sign out → redirect to `VITE_API_URL/auth/logout` (Express clears cookie)
+- Sign in → `<a href={VITE_API_URL/auth/google}>` — never use Link for this
+- Sign out → `<a href={VITE_API_URL/auth/logout}>` — never use Link for this
 - HttpOnly cookie is invisible to JavaScript — never try to read it directly
 
 **Fetch calls**
@@ -72,49 +72,69 @@ fetch(`${import.meta.env.VITE_API_URL}/api/trips`, {
 })
 ```
 
+**Shadcn/Tailwind**
+- Never use `asChild` on native DOM elements — causes React warnings
+- Use `<a>` tags directly with Tailwind classes instead of `<Button asChild><a>`
+- Shadcn components live in `src/components/ui/`
+- Import with `@/components/ui/button` etc (path alias configured)
+
+**NPS API data shape vs our database shape**
+NPS API returns: `fullName`, `parkCode`, `latitude`, `longitude`, `images[]`
+Our database returns: `name`, `npsId`, `lat`, `lng`, `imageUrl`
+When rendering favorites/trips (from our DB), map fields before passing to ParkCard:
+```javascript
+park={{
+  fullName: favorite.park.name,
+  parkCode: favorite.park.npsId,
+  images: favorite.park.imageUrl ? [{ url: favorite.park.imageUrl }] : [],
+  ...
+}}
+```
+
+## NavBar behavior
+- Transparent + white text on Home page (`isHome` check via `useLocation`)
+- Sticky + white background on all other pages
+- Nav links hidden on mobile (`hidden sm:block`)
+- Uses `useLocation` to detect home page for conditional styling
+
 ## Getting started
 
 ```bash
-# Install dependencies
 npm install
-
-# Set up environment variables
 cp .env.example .env
-# Update VITE_API_URL if your backend runs on a different port
-
-# Start dev server
+# set VITE_API_URL=http://localhost:3000
 npm run dev
 ```
 
-## Current status
+## Current status — all core features complete
 
-- [x] Vite + React scaffolded
-- [x] React Router set up with BrowserRouter
-- [x] AuthProvider context wrapping the app
-- [x] useAuth hook — calls /auth/me on load
-- [x] NavBar — shows Sign in/Log out based on auth state
-- [x] Home page placeholder
-- [x] Search page — debounced input, calls GET /api/parks?q=keyword, renders results
-- [x] ParkCard component — shows name, states, description, favorite button
-- [x] Park detail page — full park info from GET /api/parks/:parkCode
-- [x] Favorites button — POST /api/favorites, toggles to "Favorited ★" on success
-- [ ] Trips page
-- [ ] Map integration (Mapbox)
-- [ ] Styling pass — everything is unstyled, functional only
-- [ ] Load user's existing favorites on search page so favorited parks show correctly on load
+- [x] React + Vite + React Router v6
+- [x] Shadcn/ui + Tailwind styling (Luma preset, Olive base, Amber accent)
+- [x] AuthProvider + useAuth hook
+- [x] NavBar — transparent on home, sticky elsewhere, mobile responsive
+- [x] Home page — rotating hero images, search bar, featured parks grid, load more
+- [x] Search page — debounced search, infinite scroll, empty/error states
+- [x] ParkCard — full bleed image, heart overlay, gradient, hover zoom
+- [x] ParkDetail — full bleed hero, park info, weather, fees, activities
+- [x] Favorites button on ParkCard and ParkDetail (heart icon, toggles)
+- [x] Favorites page — grid of favorited parks with images
+- [x] Trips page — list trips, create trip, filter, delete with AlertDialog
+- [x] Add park to trip from ParkDetail (Popover with trip list)
+- [x] Remove park from trip with AlertDialog confirmation
+- [x] Parks shown inside each trip as scrollable thumbnails
 
-## Known issues / next session notes
+## Remaining / nice to have
 
-- Favorite button shows "Add to Faves" on every page load even if already favorited
-  — needs GET /api/favorites on mount to check existing favorites
-- NavBar items running together — needs CSS spacing
-- No loading state shown during park detail fetch
-- console.log statements cleaned up in favorites.js but double check parks.js
+- [ ] Map integration (Mapbox) — Mapbox account exists, token in .env
+- [ ] Dark mode toggle
+- [ ] isFavorite state doesn't persist on Search page across sessions
+- [ ] Hamburger menu for mobile nav
+- [ ] ParkCard on Favorites/Trips shows "Add to Favorites" button — should show unfavorite
 
-## Next steps
+## Known gotchas
 
-1. Trips page — list user's saved trips, create new trip
-2. Map integration — Mapbox with synchronized pins on search results
-3. Styling pass — consider Claude Design for prototyping the visual design
-4. Load existing favorites on search page mount
-5. Add favorite button to ParkDetail page too
+- NPS API rate limit: 1000 req/hour. Use `src/api/mockParks.js` when rate limited
+- `start` parameter must be forwarded in Express parks route for pagination to work
+- IntersectionObserver for infinite scroll — `hasMore` must start as `false`
+- Delete trip must delete TripPark records first (cascade) 
+- Park upsert `update` block must include `imageUrl` or it won't save on re-favorite
