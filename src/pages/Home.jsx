@@ -9,11 +9,22 @@ function Home() {
   const navigate = useNavigate();
   const [query, setQuery] = useState('');
   const [parks, setParks] = useState([]);
+  const [start, setStart] = useState(0);
+  const [hasMore, setHasMore] = useState(true);
+  const LIMIT = 9;
+
+  const fetchParks = async (startIndex) => {
+    const res = await fetch(`${import.meta.env.VITE_API_URL}/api/parks?limit=${LIMIT}&start=${startIndex}`);
+    const data = await res.json();
+    const newParks = data.data || [];
+
+    setParks(prev => startIndex === 0 ? newParks : [...prev, ...newParks]);
+    setStart(startIndex + LIMIT);
+    setHasMore(newParks.length === LIMIT);
+  }
 
   useEffect(() => {
-    fetch(`${import.meta.env.VITE_API_URL}/api/parks?limit=9`)
-      .then(res => res.json())
-      .then(data => setParks(data.data || []));
+    fetchParks(0);
   }, []);
 
   const handleSearch = (e) => {
@@ -74,6 +85,13 @@ function Home() {
           </div>
         </div>
       </div>
+      {hasMore && (
+        <div className="flex justify-center mt-8">
+          <Button variant="outline" onClick={() => fetchParks(start)}>
+            Load More Parks
+          </Button>
+        </div>
+      )}
     </>
   );
 }

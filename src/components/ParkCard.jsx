@@ -1,8 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Heart } from 'lucide-react';
 
 function ParkCard({ park, isFavorite: initialIsFavorite = false, handleUnfavorite }) {
   const { user } = useAuth();
@@ -55,43 +54,46 @@ function ParkCard({ park, isFavorite: initialIsFavorite = false, handleUnfavorit
   };
 
   return (
-    <Card
-      className="flex flex-col h-full hover:shadow-md transition-shadow"
+    <div
+      className="relative rounded-2xl overflow-hidden cursor-pointer group h-72"
       onClick={() => navigate(`/parks/${park.parkCode}`)}
     >
-      {park.images?.[0] && (
+      {/* background image */}
+      {park.images?.[0] ? (
         <img
           src={park.images[0].url}
           alt={park.images[0].altText}
-          className="w-full h-48 object-cover rounded-t-lg"
+          className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
         />
+      ) : (
+        <div className="w-full h-full bg-gradient-to-br from-stone-700 to-stone-900 flex items-center justify-center p-6">
+          <span className="text-white/40 text-4xl">🏕️</span>
+        </div>
       )}
-      <CardHeader className="pb-2">
-        <CardTitle className="text-base hover:text-primary transition-colors line-clamp-2">
+
+      {/* gradient overlay */}
+      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+
+      {/* heart button */}
+      {user && (
+        <button
+          onClick={handleFavoritesClick}
+          className="absolute top-3 right-3 p-1.5 rounded-full hover:scale-110 transition-transform"
+        >
+          <Heart
+            className={`w-5 h-5 ${isFavorite ? 'text-red-500 fill-red-500' : 'text-white'}`}
+          />
+        </button>
+      )}
+
+      {/* text content */}
+      <div className="absolute bottom-0 left-0 right-0 p-4">
+        <h3 className="text-white font-semibold text-base line-clamp-2 mb-1">
           {park.fullName}
-        </CardTitle>
-        <p className="text-xs text-muted-foreground">{park.states}</p>
-      </CardHeader>
-      <CardContent className="flex-1">
-        <p className="text-sm text-muted-foreground line-clamp-3">{park.description}</p>
-      </CardContent>
-      <CardFooter>
-        {user ? (
-          <Button
-            variant={isFavorite ? 'secondary' : 'outline'}
-            size="sm"
-            onClick={handleFavoritesClick}
-            className="w-full"
-          >
-            {isFavorite ? '★ Favorited' : '☆ Add to Favorites'}
-          </Button>
-        ) : (
-          <Button asChild variant="outline" size="sm" className="w-full">
-            <a href={`${import.meta.env.VITE_API_URL}/auth/google`}>Sign in to favorite</a>
-          </Button>
-        )}
-      </CardFooter>
-    </Card>
+        </h3>
+        <p className="text-white/60 text-xs">{park.states}</p>
+      </div>
+    </div>
   );
 }
 
