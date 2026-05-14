@@ -38,10 +38,10 @@ function Home() {
 
         {/* content needs z-10 to sit above the overlay */}
         <h1 className="text-5xl font-bold tracking-tight text-white relative z-10">
-          Discover America's Parks
+          Parks of the United States
         </h1>
         <p className="text-xl text-white/80 max-w-2xl relative z-10">
-          Search, save, and plan road trips to national and state parks across the US.
+          Search, fav, and plan road trips to US national and state parks.
         </p>
         <form onSubmit={handleSearch} className="flex gap-2 w-full max-w-lg relative z-10">
           <input
