@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 
 import { useAuth } from '../hooks/useAuth';
 
-function ParkDetail({ initialIsFavorite = false }) {
+function ParkDetail({ isFavorite: initialIsFavorite = false }) {
     const { parkCode } = useParams();
     const { user } = useAuth();
     const [park, setPark] = useState(null);
@@ -95,6 +95,19 @@ function ParkDetail({ initialIsFavorite = false }) {
         }
 
     };
+
+    useEffect(() => {
+        if (!user) return;
+        fetch(`${import.meta.env.VITE_API_URL}/api/favorites`, {
+            credentials: 'include'
+        })
+            .then(res => res.json())
+            .then(data => {
+                const alreadyFavorited = data.some(fav => fav.park.npsId === parkCode);
+                setIsFavorite(alreadyFavorited);
+            })
+            .catch(err => console.error('Failed to check favorites:', err));
+    }, [user, parkCode]);
 
     useEffect(() => {
         if (!user) return;
@@ -195,8 +208,8 @@ function ParkDetail({ initialIsFavorite = false }) {
             className="p-2 bg-black/40 backdrop-blur-sm border border-white/20 rounded-md hover:bg-black/60 transition-colors"
           >
             <Heart
-              className={`w-5 h-5 ${isFavorite ? 'text-red-500 fill-red-500' : 'text-white fill-white'}`}
-            />
+            className={`w-5 h-5 ${isFavorite ? 'text-red-500 fill-red-500' : 'text-white'}`}
+          />
           </button>
         </div>
       )}
