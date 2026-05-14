@@ -3,7 +3,6 @@ import { useParams } from 'react-router-dom';
 
 function ParkDetail() {
     const { parkCode } = useParams();
-    console.log('parkCode', parkCode)
 
     const [park, setPark] = useState(null);
     const [loading, setLoading] = useState(false);
@@ -25,9 +24,7 @@ function ParkDetail() {
             }
         };
         getPark();
-    }, [parkCode])
-
-    // console.log("park", park)
+    }, [parkCode]);
 
     if (loading) return <p>Loading...</p>;
     if (error) return <p>{error}</p>;

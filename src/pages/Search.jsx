@@ -23,9 +23,7 @@ function Search() {
       setError(null);
       try {
         const response = await fetch(`${import.meta.env.VITE_API_URL}/api/parks?q=${debouncedQuery}`);
-        console.log('API url', `${import.meta.env.VITE_API_URL}/api/parks?q=${debouncedQuery}`)
         const data = await response.json();
-        console.log(data.data)
         setResults(data.data)
       } catch (error) {
         setError('Failed to fetch parks');

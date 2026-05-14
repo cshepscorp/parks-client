@@ -7,8 +7,8 @@ function Favorites() {
     const [error, setError] = useState(null);
 
     const handleUnfavorite = (parkId) => {
-  setFavorites(favorites.filter(f => f.park.id !== parkId));
-};
+        setFavorites(favorites.filter(f => f.park.id !== parkId));
+    };
 
     useEffect(() => {
         const getFavorites = async () => {
@@ -20,7 +20,6 @@ function Favorites() {
                 });
                 const data = await response.json();
                 if (!response.ok) throw new Error('Failed to fetch favorites');
-                console.log('favorites data', data)
                 setFavorites(data)
             } catch (error) {
                 setError('Failed to fetch favorites details');
@@ -59,7 +58,7 @@ function Favorites() {
     </div> */}
 
             {favorites.length > 0 ? (
-                <div className="flex flex-col gap-4">
+                <div className="mb-6">
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                         {favorites.map(favorite => (
                             <ParkCard
