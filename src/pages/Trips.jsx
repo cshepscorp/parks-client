@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../hooks/useAuth';
 import { Pencil, GripVertical, MapIcon } from 'lucide-react';
 import {
     AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
@@ -117,6 +118,7 @@ function TripMap({ tripParks }) {
 
 function Trips() {
     const navigate = useNavigate();
+    const { user, loading: authLoading } = useAuth();
     const [trips, setTrips] = useState([]);
     const [filteredTrips, setFilteredTrips] = useState([]);
     const [query, setQuery] = useState('');
@@ -244,6 +246,7 @@ function Trips() {
     };
 
     useEffect(() => {
+        if (!user) return;
         const getTrips = async () => {
             setLoading(true);
             setError(null);
@@ -261,7 +264,7 @@ function Trips() {
             }
         };
         getTrips();
-    }, []);
+    }, [user]);
 
     useEffect(() => {
         setFilteredTrips(trips.filter(trip =>
@@ -269,8 +272,21 @@ function Trips() {
         ));
     }, [trips, query]);
 
-    if (loading) return <p>Loading...</p>;
-    if (error) return <p>{error}</p>;
+    if (authLoading) return <p className="max-w-4xl mx-auto px-6 py-8">Loading...</p>;
+    if (!user) return (
+        <div className="max-w-4xl mx-auto px-6 py-16 text-center">
+            <p className="text-lg font-semibold mb-2">Sign in to view your trips</p>
+            <p className="text-muted-foreground text-sm mb-6">Plan and save road trips to national and state parks.</p>
+            <a
+                href={`${import.meta.env.VITE_API_URL}/auth/google`}
+                className="inline-flex items-center justify-center px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors text-sm"
+            >
+                Sign in with Google
+            </a>
+        </div>
+    );
+    if (loading) return <p className="max-w-4xl mx-auto px-6 py-8">Loading...</p>;
+    if (error) return <p className="max-w-4xl mx-auto px-6 py-8">{error}</p>;
 
     return (
         <div className="max-w-4xl mx-auto px-6 py-8">

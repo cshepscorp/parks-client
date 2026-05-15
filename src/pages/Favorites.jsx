@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react';
 import ParkCard from '../components/ParkCard';
+import { useAuth } from '../hooks/useAuth';
 
 function Favorites() {
+    const { user, loading: authLoading } = useAuth();
     const [favorites, setFavorites] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -11,6 +13,7 @@ function Favorites() {
     };
 
     useEffect(() => {
+        if (!user) return;
         const getFavorites = async () => {
             setLoading(true);
             setError(null);
@@ -20,43 +23,37 @@ function Favorites() {
                 });
                 const data = await response.json();
                 if (!response.ok) throw new Error('Failed to fetch favorites');
-                setFavorites(data)
+                setFavorites(data);
             } catch (error) {
-                setError('Failed to fetch favorites details');
+                setError('Failed to fetch favorites');
             } finally {
                 setLoading(false);
             }
         };
         getFavorites();
-    }, []);
+    }, [user]);
 
-    if (loading) return <p>Loading...</p>;
-    if (error) return <p>{error}</p>;
+    if (authLoading) return <p className="max-w-4xl mx-auto px-6 py-8">Loading...</p>;
+    if (!user) return (
+        <div className="max-w-4xl mx-auto px-6 py-16 text-center">
+            <p className="text-lg font-semibold mb-2">Sign in to view your favorites</p>
+            <p className="text-muted-foreground text-sm mb-6">Save parks you love and find them here anytime.</p>
+            <a
+                href={`${import.meta.env.VITE_API_URL}/auth/google`}
+                className="inline-flex items-center justify-center px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors text-sm"
+            >
+                Sign in with Google
+            </a>
+        </div>
+    );
+    if (loading) return <p className="max-w-4xl mx-auto px-6 py-8">Loading...</p>;
+    if (error) return <p className="max-w-4xl mx-auto px-6 py-8">{error}</p>;
 
     return (
         <div className="max-w-4xl mx-auto px-6 py-8">
             <div className="flex items-center justify-between mb-8">
                 <h1 className="text-3xl font-bold">My Favorites</h1>
             </div>
-            {/* 
-    <div className="flex gap-3 mb-8">
-      <input
-        type="text"
-        placeholder="Filter trips..."
-        value={query}
-        onChange={e => setQuery(e.target.value)}
-        className="flex-1 px-4 py-2 rounded-md border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-      />
-      <input
-        type="text"
-        placeholder="New trip name..."
-        value={newTripName}
-        onChange={e => setNewTripName(e.target.value)}
-        className="flex-1 px-4 py-2 rounded-md border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-      />
-      <Button onClick={handleCreateTrip}>Create Trip</Button>
-    </div> */}
-
             {favorites.length > 0 ? (
                 <div className="mb-6">
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">

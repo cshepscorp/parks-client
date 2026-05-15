@@ -3,6 +3,17 @@ import { useParams } from 'react-router-dom';
 import { Heart, Phone, Globe, Clock, AlertTriangle, Info, XCircle } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { useAuth } from '../hooks/useAuth';
+import ParkCard from '@/components/ParkCard';
+
+function distanceMiles(lat1, lng1, lat2, lng2) {
+    const R = 3958.8;
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLng = (lng2 - lng1) * Math.PI / 180;
+    const a = Math.sin(dLat / 2) ** 2 +
+        Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+        Math.sin(dLng / 2) ** 2;
+    return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
 
 const ALERT_STYLES = {
     'Park Closure': { bg: 'bg-red-50 border-red-200 dark:bg-red-950 dark:border-red-800', icon: XCircle, text: 'text-red-700 dark:text-red-300', iconColor: 'text-red-500 dark:text-red-400' },
@@ -18,6 +29,7 @@ function ParkDetail() {
     const { user } = useAuth();
     const [park, setPark] = useState(null);
     const [alerts, setAlerts] = useState([]);
+    const [nearbyParks, setNearbyParks] = useState([]);
     const [isFavorite, setIsFavorite] = useState(false);
     const [heroIndex, setHeroIndex] = useState(0);
     const [trips, setTrips] = useState([]);
@@ -123,6 +135,28 @@ function ParkDetail() {
         };
         getPark();
     }, [parkCode]);
+
+    useEffect(() => {
+        if (!park?.latitude || !park?.longitude || !park?.states) return;
+        const stateCode = park.states.split(',')[0].trim();
+        fetch(`${import.meta.env.VITE_API_URL}/api/parks?stateCode=${stateCode}&limit=50`)
+            .then(res => res.json())
+            .then(data => {
+                const nearby = (data.data || [])
+                    .filter(p => p.parkCode !== parkCode && p.latitude && p.longitude)
+                    .map(p => ({
+                        ...p,
+                        distance: distanceMiles(
+                            parseFloat(park.latitude), parseFloat(park.longitude),
+                            parseFloat(p.latitude), parseFloat(p.longitude)
+                        ),
+                    }))
+                    .sort((a, b) => a.distance - b.distance)
+                    .slice(0, 6);
+                setNearbyParks(nearby);
+            })
+            .catch(() => {});
+    }, [park, parkCode]);
 
     useEffect(() => {
         fetch(`${import.meta.env.VITE_API_URL}/api/parks/${parkCode}/alerts`)
@@ -370,6 +404,23 @@ function ParkDetail() {
                                 >
                                     {activity.name}
                                 </span>
+                            ))}
+                        </div>
+                    </div>
+                )}
+
+                {/* Nearby Parks */}
+                {nearbyParks.length > 0 && (
+                    <div className="mt-10">
+                        <h2 className="font-semibold mb-4">Nearby Parks</h2>
+                        <div className="flex gap-4 overflow-x-auto pb-2 -mx-6 px-6">
+                            {nearbyParks.map(p => (
+                                <div key={p.parkCode} className="w-52 flex-shrink-0">
+                                    <ParkCard park={p} />
+                                    <p className="text-xs text-muted-foreground mt-1.5 px-1">
+                                        {Math.round(p.distance)} mi away
+                                    </p>
+                                </div>
                             ))}
                         </div>
                     </div>
