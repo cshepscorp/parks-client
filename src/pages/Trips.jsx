@@ -289,7 +289,7 @@ function Trips() {
     if (error) return <p className="max-w-4xl mx-auto px-6 py-8">{error}</p>;
 
     return (
-        <div className="max-w-4xl mx-auto px-6 py-8">
+        <div className="max-w-6xl mx-auto px-6 py-8">
             <div className="flex items-center justify-between mb-8">
                 <h1 className="text-3xl font-bold">My Trips</h1>
             </div>

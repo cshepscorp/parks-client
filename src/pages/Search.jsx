@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Search as SearchIcon, X } from 'lucide-react';
+import { Search as SearchIcon, X, ArrowLeft, MapPin } from 'lucide-react';
 import { useDebounce } from '../hooks/useDebounce';
 import ParkCard from '../components/ParkCard';
 
@@ -20,7 +20,70 @@ const US_STATES = [
   ['WI', 'Wisconsin'], ['WY', 'Wyoming'], ['DC', 'Washington D.C.'],
 ];
 
+const POPULAR_PARK_CODES = ['yell', 'yose', 'grca', 'grsm', 'romo', 'zion', 'olym', 'acad', 'glac'];
+
+const ROUTES = [
+  {
+    id: 'southwest',
+    name: 'Southwest Desert Loop',
+    description: 'Red rock canyons, towering arches, and canyon country classics',
+    parkCodes: ['grca', 'zion', 'brca', 'arch', 'cany'],
+  },
+  {
+    id: 'pacific',
+    name: 'Pacific Coast Drive',
+    description: 'Ancient forests and dramatic coastline from California to Washington',
+    parkCodes: ['redw', 'crla', 'olym'],
+  },
+  {
+    id: 'rockies',
+    name: 'Rocky Mountain Road Trip',
+    description: 'Alpine peaks, ancient cliff dwellings, and dramatic canyon views',
+    parkCodes: ['romo', 'grsa', 'meve', 'blca'],
+  },
+  {
+    id: 'eastcoast',
+    name: 'East Coast Classics',
+    description: 'From the rocky Maine coast to the misty southern Appalachians',
+    parkCodes: ['acad', 'shen', 'grsm'],
+  },
+];
+
 const LIMIT = 9;
+
+function SkeletonCard() {
+  return (
+    <div className="rounded-2xl overflow-hidden bg-muted animate-pulse h-72" />
+  );
+}
+
+function RouteCard({ route, coverPark, onClick }) {
+  return (
+    <button
+      onClick={onClick}
+      className="relative rounded-2xl overflow-hidden cursor-pointer group h-48 w-full text-left"
+    >
+      {coverPark?.images?.[0] ? (
+        <img
+          src={coverPark.images[0].url}
+          alt={coverPark.images[0].altText}
+          className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+        />
+      ) : (
+        <div className="w-full h-full bg-gradient-to-br from-stone-600 to-stone-900" />
+      )}
+      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-black/10" />
+      <div className="absolute bottom-0 left-0 right-0 p-4">
+        <div className="flex items-center gap-1.5 mb-1">
+          <MapPin className="w-3.5 h-3.5 text-white/60" />
+          <span className="text-white/60 text-xs">{route.parkCodes.length} parks</span>
+        </div>
+        <h3 className="text-white font-semibold text-lg leading-tight mb-1">{route.name}</h3>
+        <p className="text-white/70 text-xs line-clamp-2">{route.description}</p>
+      </div>
+    </button>
+  );
+}
 
 function Search() {
   const [searchParams] = useSearchParams();
@@ -31,11 +94,30 @@ function Search() {
   const [hasMore, setHasMore] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [discoverParks, setDiscoverParks] = useState({});
+  const [discoverLoading, setDiscoverLoading] = useState(true);
+  const [activeRoute, setActiveRoute] = useState(null);
   const loaderRef = useRef(null);
 
   const debouncedQuery = useDebounce(query, 300);
-
   const hasInput = debouncedQuery.length >= 3 || stateCode !== '';
+
+  useEffect(() => {
+    const allCodes = [...new Set([...POPULAR_PARK_CODES, ...ROUTES.flatMap(r => r.parkCodes)])];
+    fetch(`${import.meta.env.VITE_API_URL}/api/parks?parkCodes=${allCodes.join(',')}&limit=50`)
+      .then(res => res.json())
+      .then(data => {
+        const map = {};
+        (data.data || []).forEach(p => { map[p.parkCode] = p; });
+        setDiscoverParks(map);
+      })
+      .catch(() => {})
+      .finally(() => setDiscoverLoading(false));
+  }, []);
+
+  useEffect(() => {
+    if (hasInput) setActiveRoute(null);
+  }, [hasInput]);
 
   const buildUrl = (q, state, startIndex) => {
     const params = new URLSearchParams({ start: startIndex, limit: LIMIT });
@@ -83,21 +165,19 @@ function Search() {
     return () => observer.disconnect();
   }, [hasMore, loading, start, debouncedQuery, stateCode]);
 
-  const clearQuery = () => setQuery('');
-
-  const inputClass = "w-full pl-10 pr-10 py-2 rounded-md border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring";
-  const selectClass = "px-3 py-2 rounded-md border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring text-foreground w-full sm:w-auto";
+  const popularParks = POPULAR_PARK_CODES.map(code => discoverParks[code]).filter(Boolean).slice(0, 6);
+  const routeParks = activeRoute
+    ? activeRoute.parkCodes.map(code => discoverParks[code]).filter(Boolean)
+    : [];
 
   return (
     <div className="max-w-6xl mx-auto px-6 py-8">
-      {/* Header */}
       <div className="mb-8">
         <h1 className="text-3xl font-bold mb-1">Search Parks</h1>
         <p className="text-muted-foreground text-sm">Find national and state parks across the US</p>
       </div>
 
-      {/* Search controls */}
-      <div className="flex flex-col sm:flex-row gap-3 mb-6">
+      <div className="flex flex-col sm:flex-row gap-3 mb-8">
         <div className="relative flex-1">
           <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
           <input
@@ -105,11 +185,11 @@ function Search() {
             placeholder="Search by name, keyword..."
             value={query}
             onChange={e => setQuery(e.target.value)}
-            className={inputClass}
+            className="w-full pl-10 pr-10 py-2 rounded-md border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring"
           />
           {query && (
             <button
-              onClick={clearQuery}
+              onClick={() => setQuery('')}
               className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
               aria-label="Clear search"
             >
@@ -120,7 +200,7 @@ function Search() {
         <select
           value={stateCode}
           onChange={e => setStateCode(e.target.value)}
-          className={selectClass}
+          className="px-3 py-2 rounded-md border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring text-foreground w-full sm:w-auto"
         >
           <option value="">All states</option>
           {US_STATES.map(([code, name]) => (
@@ -129,62 +209,97 @@ function Search() {
         </select>
       </div>
 
-      {/* Results meta */}
-      {hasInput && !loading && results.length > 0 && (
-        <p className="text-sm text-muted-foreground mb-4">
-          {results.length} park{results.length !== 1 ? 's' : ''} found
-          {debouncedQuery.length >= 3 ? ` for "${debouncedQuery}"` : ''}
-          {stateCode ? ` in ${US_STATES.find(([c]) => c === stateCode)?.[1]}` : ''}
-          {hasMore ? '+' : ''}
-        </p>
-      )}
-
-      {/* States */}
-      {error && <p className="text-destructive text-sm mb-4">{error}</p>}
-
-      {/* Results grid */}
-      {results.length > 0 && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {results.map(park => (
-            <ParkCard key={park.id} park={park} />
-          ))}
-        </div>
-      )}
-
-      {/* Loading skeleton */}
-      {loading && results.length === 0 && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {Array.from({ length: 6 }).map((_, i) => (
-            <div key={i} className="rounded-xl overflow-hidden border border-border bg-card animate-pulse">
-              <div className="h-48 bg-muted" />
-              <div className="p-4 space-y-2">
-                <div className="h-4 bg-muted rounded w-3/4" />
-                <div className="h-3 bg-muted rounded w-1/2" />
-              </div>
+      {/* Search results */}
+      {hasInput && (
+        <>
+          {error && <p className="text-destructive text-sm mb-4">{error}</p>}
+          {!loading && results.length > 0 && (
+            <p className="text-sm text-muted-foreground mb-4">
+              {results.length} park{results.length !== 1 ? 's' : ''} found
+              {debouncedQuery.length >= 3 ? ` for "${debouncedQuery}"` : ''}
+              {stateCode ? ` in ${US_STATES.find(([c]) => c === stateCode)?.[1]}` : ''}
+              {hasMore ? '+' : ''}
+            </p>
+          )}
+          {loading && results.length === 0 && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              {Array.from({ length: 6 }).map((_, i) => <SkeletonCard key={i} />)}
             </div>
-          ))}
-        </div>
+          )}
+          {results.length > 0 && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              {results.map(park => (
+                <ParkCard key={park.id} park={park} />
+              ))}
+            </div>
+          )}
+          {loading && results.length > 0 && (
+            <p className="text-sm text-muted-foreground text-center mt-6">Loading more...</p>
+          )}
+          {!loading && results.length === 0 && (
+            <div className="text-center py-16">
+              <p className="text-lg font-medium mb-2">No parks found</p>
+              <p className="text-sm text-muted-foreground">
+                Try a different search term{stateCode ? ' or state' : ''}.
+              </p>
+            </div>
+          )}
+        </>
       )}
 
-      {loading && results.length > 0 && (
-        <p className="text-sm text-muted-foreground text-center mt-6">Loading more...</p>
+      {/* Active route view */}
+      {!hasInput && activeRoute && (
+        <>
+          <button
+            onClick={() => setActiveRoute(null)}
+            className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors mb-6"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            Back to Discover
+          </button>
+          <div className="mb-6">
+            <h2 className="text-2xl font-bold mb-1">{activeRoute.name}</h2>
+            <p className="text-muted-foreground text-sm">{activeRoute.description}</p>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {routeParks.map(park => (
+              <ParkCard key={park.parkCode} park={park} />
+            ))}
+          </div>
+        </>
       )}
 
-      {/* Empty state */}
-      {!loading && hasInput && results.length === 0 && (
-        <div className="text-center py-16">
-          <p className="text-lg font-medium mb-2">No parks found</p>
-          <p className="text-sm text-muted-foreground">
-            Try a different search term{stateCode ? ' or state' : ''}.
-          </p>
-        </div>
-      )}
+      {/* Discover section */}
+      {!hasInput && !activeRoute && (
+        <div className="space-y-12">
+          <div>
+            <h2 className="text-xl font-semibold mb-4">Popular Parks</h2>
+            {discoverLoading ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                {Array.from({ length: 6 }).map((_, i) => <SkeletonCard key={i} />)}
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                {popularParks.map(park => (
+                  <ParkCard key={park.parkCode} park={park} />
+                ))}
+              </div>
+            )}
+          </div>
 
-      {/* Prompt state */}
-      {!loading && !hasInput && (
-        <div className="text-center py-16">
-          <p className="text-lg font-medium mb-2">Search for a park</p>
-          <p className="text-sm text-muted-foreground">Enter a name, keyword, or filter by state to get started.</p>
+          <div>
+            <h2 className="text-xl font-semibold mb-4">Popular Routes</h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {ROUTES.map(route => (
+                <RouteCard
+                  key={route.id}
+                  route={route}
+                  coverPark={discoverParks[route.parkCodes[0]]}
+                  onClick={() => setActiveRoute(route)}
+                />
+              ))}
+            </div>
+          </div>
         </div>
       )}
 
