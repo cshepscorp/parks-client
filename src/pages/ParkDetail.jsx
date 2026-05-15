@@ -188,16 +188,17 @@ function ParkDetail() {
                     <div className="w-full h-full bg-gradient-to-br from-stone-700 to-stone-900" />
                 )}
                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+                <div className="absolute inset-x-0 top-0 h-28 bg-gradient-to-b from-black/60 to-transparent" />
 
-                <div className="absolute bottom-0 left-0 right-0 p-8 max-w-4xl mx-auto">
-                    <h1 className="text-5xl font-bold text-white mb-2">{park.fullName}</h1>
+                <div className="absolute bottom-0 left-0 right-0 p-4 sm:p-8 max-w-4xl mx-auto">
+                    <h1 className="text-2xl sm:text-5xl font-bold text-white mb-2 leading-tight">{park.fullName}</h1>
                     <p className="text-white/70 text-sm uppercase tracking-wide">
                         {park.designation} · {park.states}
                     </p>
                 </div>
 
                 {user && (
-                    <div className="absolute top-4 right-4 flex items-center gap-2">
+                    <div className="absolute top-16 left-0 right-0 max-w-4xl mx-auto px-4 sm:px-8 flex justify-end items-center gap-2">
                         <Popover>
                             <PopoverTrigger className="inline-flex items-center gap-1 px-3 py-1.5 text-sm bg-black/40 backdrop-blur-sm text-white border border-white/20 rounded-md hover:bg-black/60 transition-colors">
                                 + Add to Trip
@@ -238,18 +239,20 @@ function ParkDetail() {
 
             {/* Image gallery strip */}
             {images.length > 1 && (
-                <div className="flex gap-2 px-6 py-3 overflow-x-auto bg-black">
-                    {images.map((img, i) => (
-                        <button
-                            key={i}
-                            onClick={() => setHeroIndex(i)}
-                            className={`flex-shrink-0 w-24 h-16 rounded overflow-hidden border-2 transition-all ${
-                                i === heroIndex ? 'border-white opacity-100' : 'border-transparent opacity-50 hover:opacity-80'
-                            }`}
-                        >
-                            <img src={img.url} alt={img.altText} className="w-full h-full object-cover" />
-                        </button>
-                    ))}
+                <div className="bg-black">
+                    <div className="max-w-4xl mx-auto flex gap-2 px-4 sm:px-8 py-3 overflow-x-auto">
+                        {images.map((img, i) => (
+                            <button
+                                key={i}
+                                onClick={() => setHeroIndex(i)}
+                                className={`flex-shrink-0 w-24 h-16 rounded overflow-hidden border-2 transition-all ${
+                                    i === heroIndex ? 'border-white opacity-100' : 'border-transparent opacity-50 hover:opacity-80'
+                                }`}
+                            >
+                                <img src={img.url} alt={img.altText} className="w-full h-full object-cover" />
+                            </button>
+                        ))}
+                    </div>
                 </div>
             )}
 

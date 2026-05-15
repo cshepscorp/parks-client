@@ -8,7 +8,7 @@ function NavBar() {
   const { user } = useAuth();
   const { theme, toggle } = useTheme();
   const location = useLocation();
-  const isHome = location.pathname === '/';
+  const isHome = location.pathname === '/' || location.pathname.startsWith('/parks/');
   const [menuOpen, setMenuOpen] = useState(false);
 
   // Close menu on navigation
