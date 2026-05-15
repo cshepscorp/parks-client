@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, GripVertical, MapIcon, Pencil, X, Plus } from 'lucide-react';
+import { ArrowLeft, GripVertical, MapIcon, Pencil, X, Plus, Navigation } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '../hooks/useAuth';
 import {
@@ -12,6 +12,56 @@ import { SortableContext, verticalListSortingStrategy, useSortable, arrayMove } 
 import { CSS } from '@dnd-kit/utilities';
 import Map, { Marker, Source, Layer } from 'react-map-gl/mapbox';
 import 'mapbox-gl/dist/mapbox-gl.css';
+
+function distanceMiles(lat1, lng1, lat2, lng2) {
+    const R = 3958.8;
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLng = (lng2 - lng1) * Math.PI / 180;
+    const a = Math.sin(dLat / 2) ** 2 +
+        Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+        Math.sin(dLng / 2) ** 2;
+    return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+function nearestNeighborRoute(tripParks) {
+    const routable = tripParks.filter(tp => tp.park.lat && tp.park.lng);
+    const unroutable = tripParks.filter(tp => !tp.park.lat || !tp.park.lng);
+    if (routable.length <= 2) return tripParks;
+
+    let bestRoute = null;
+    let bestDist = Infinity;
+
+    for (let startIdx = 0; startIdx < routable.length; startIdx++) {
+        const visited = new Set([startIdx]);
+        const route = [routable[startIdx]];
+
+        while (route.length < routable.length) {
+            const last = route[route.length - 1];
+            let nearestIdx = -1, nearestDist = Infinity;
+            routable.forEach((tp, i) => {
+                if (visited.has(i)) return;
+                const d = distanceMiles(
+                    parseFloat(last.park.lat), parseFloat(last.park.lng),
+                    parseFloat(tp.park.lat), parseFloat(tp.park.lng)
+                );
+                if (d < nearestDist) { nearestDist = d; nearestIdx = i; }
+            });
+            visited.add(nearestIdx);
+            route.push(routable[nearestIdx]);
+        }
+
+        let totalDist = 0;
+        for (let i = 0; i < route.length - 1; i++) {
+            totalDist += distanceMiles(
+                parseFloat(route[i].park.lat), parseFloat(route[i].park.lng),
+                parseFloat(route[i + 1].park.lat), parseFloat(route[i + 1].park.lng)
+            );
+        }
+        if (totalDist < bestDist) { bestDist = totalDist; bestRoute = route; }
+    }
+
+    return [...bestRoute, ...unroutable];
+}
 
 function TripMap({ tripParks }) {
     const valid = tripParks.filter(tp => tp.park.lat && tp.park.lng);
@@ -141,6 +191,7 @@ function TripDetail() {
     const [editingName, setEditingName] = useState(false);
     const [editingTripName, setEditingTripName] = useState('');
     const [confirmRemove, setConfirmRemove] = useState(null);
+    const [isOptimized, setIsOptimized] = useState(false);
 
     const sensors = useSensors(
         useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
@@ -195,6 +246,7 @@ function TripDetail() {
         const reordered = arrayMove(trip.tripParks, oldIndex, newIndex);
 
         setTrip(prev => ({ ...prev, tripParks: reordered }));
+        setIsOptimized(false);
 
         try {
             await fetch(`${import.meta.env.VITE_API_URL}/api/trips/${tripId}/parks/reorder`, {
@@ -205,6 +257,22 @@ function TripDetail() {
             });
         } catch (err) {
             console.error('Failed to save order:', err);
+        }
+    };
+
+    const optimizeRoute = async () => {
+        const optimized = nearestNeighborRoute(trip.tripParks);
+        setTrip(prev => ({ ...prev, tripParks: optimized }));
+        setIsOptimized(true);
+        try {
+            await fetch(`${import.meta.env.VITE_API_URL}/api/trips/${tripId}/parks/reorder`, {
+                method: 'PATCH',
+                credentials: 'include',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ order: optimized.map(tp => tp.id) }),
+            });
+        } catch (err) {
+            console.error('Failed to save optimized order:', err);
         }
     };
 
@@ -220,6 +288,7 @@ function TripDetail() {
                 ...prev,
                 tripParks: prev.tripParks.filter(tp => tp.id !== tripParkId),
             }));
+            setIsOptimized(false);
         } catch (err) {
             console.error('Failed to remove park:', err);
         } finally {
@@ -300,6 +369,19 @@ function TripDetail() {
             {showMap && trip.tripParks.length > 0 && (
                 <div className="mb-6 rounded-lg overflow-hidden border border-border">
                     <TripMap tripParks={trip.tripParks} />
+                </div>
+            )}
+
+            {trip.tripParks.filter(tp => tp.park.lat && tp.park.lng).length >= 3 && (
+                <div className="flex justify-end mb-3">
+                    <button
+                        onClick={optimizeRoute}
+                        disabled={isOptimized}
+                        className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                    >
+                        <Navigation className="w-3.5 h-3.5" />
+                        {isOptimized ? 'Route optimized' : 'Optimize route'}
+                    </button>
                 </div>
             )}
 
