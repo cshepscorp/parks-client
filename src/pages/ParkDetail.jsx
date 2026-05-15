@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { Heart, Phone, Globe, Clock, AlertTriangle, Info, XCircle } from 'lucide-react';
+import { Heart, Phone, Globe, Clock, AlertTriangle, Info, XCircle, Plus } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { useAuth } from '../hooks/useAuth';
 import ParkCard from '@/components/ParkCard';
@@ -34,6 +34,8 @@ function ParkDetail() {
     const [heroIndex, setHeroIndex] = useState(0);
     const [trips, setTrips] = useState([]);
     const [addedToTrips, setAddedToTrips] = useState([]);
+    const [newTripName, setNewTripName] = useState('');
+    const [creatingTrip, setCreatingTrip] = useState(false);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
 
@@ -94,6 +96,29 @@ function ParkDetail() {
             setAddedToTrips(prev => [...prev, tripId]);
         } catch (error) {
             console.error('Failed to add park to trip:', error);
+        }
+    };
+
+    const handleCreateAndAddTrip = async (e) => {
+        e.preventDefault();
+        if (!newTripName.trim()) return;
+        setCreatingTrip(true);
+        try {
+            const res = await fetch(`${import.meta.env.VITE_API_URL}/api/trips`, {
+                method: 'POST',
+                credentials: 'include',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name: newTripName.trim() }),
+            });
+            if (!res.ok) throw new Error('Failed to create trip');
+            const newTrip = await res.json();
+            setTrips(prev => [...prev, newTrip]);
+            setNewTripName('');
+            await handleAddToTrip(newTrip.id);
+        } catch (error) {
+            console.error('Failed to create trip:', error);
+        } finally {
+            setCreatingTrip(false);
         }
     };
 
@@ -203,11 +228,9 @@ function ParkDetail() {
                             <PopoverTrigger className="inline-flex items-center gap-1 px-3 py-1.5 text-sm bg-black/40 backdrop-blur-sm text-white border border-white/20 rounded-md hover:bg-black/60 transition-colors">
                                 + Add to Trip
                             </PopoverTrigger>
-                            <PopoverContent className="w-56 p-2">
-                                {trips.length === 0 ? (
-                                    <p className="text-sm text-muted-foreground p-2">No trips yet. Create one first.</p>
-                                ) : (
-                                    <div className="flex flex-col gap-1">
+                            <PopoverContent className="w-60 p-2">
+                                {trips.length > 0 && (
+                                    <div className="flex flex-col gap-1 mb-2">
                                         {trips.map(trip => (
                                             <button
                                                 key={trip.id}
@@ -224,6 +247,24 @@ function ParkDetail() {
                                         ))}
                                     </div>
                                 )}
+                                <div className={trips.length > 0 ? 'border-t border-border pt-2' : ''}>
+                                    <form onSubmit={handleCreateAndAddTrip} className="flex gap-1.5">
+                                        <input
+                                            type="text"
+                                            placeholder="New trip name..."
+                                            value={newTripName}
+                                            onChange={e => setNewTripName(e.target.value)}
+                                            className="flex-1 min-w-0 px-2 py-1.5 text-sm rounded-md border border-input bg-background focus:outline-none focus:ring-2 focus:ring-ring"
+                                        />
+                                        <button
+                                            type="submit"
+                                            disabled={!newTripName.trim() || creatingTrip}
+                                            className="p-1.5 rounded-md bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50 transition-colors"
+                                        >
+                                            <Plus className="w-4 h-4" />
+                                        </button>
+                                    </form>
+                                </div>
                             </PopoverContent>
                         </Popover>
 

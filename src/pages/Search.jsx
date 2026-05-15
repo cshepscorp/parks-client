@@ -1,7 +1,8 @@
 import { useEffect, useState, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Search as SearchIcon, X, ArrowLeft, MapPin } from 'lucide-react';
+import { Search as SearchIcon, X, ArrowLeft, MapPin, Check } from 'lucide-react';
 import { useDebounce } from '../hooks/useDebounce';
+import { useAuth } from '../hooks/useAuth';
 import ParkCard from '../components/ParkCard';
 
 const US_STATES = [
@@ -86,6 +87,7 @@ function RouteCard({ route, coverPark, onClick }) {
 }
 
 function Search() {
+  const { user } = useAuth();
   const [searchParams] = useSearchParams();
   const [query, setQuery] = useState(searchParams.get('q') || '');
   const [stateCode, setStateCode] = useState('');
@@ -97,6 +99,10 @@ function Search() {
   const [discoverParks, setDiscoverParks] = useState({});
   const [discoverLoading, setDiscoverLoading] = useState(true);
   const [activeRoute, setActiveRoute] = useState(null);
+  const [userTrips, setUserTrips] = useState([]);
+  const [savingRoute, setSavingRoute] = useState(false);
+  const [routeSaved, setRouteSaved] = useState(false);
+  const [addingToTripId, setAddingToTripId] = useState(null);
   const loaderRef = useRef(null);
 
   const debouncedQuery = useDebounce(query, 300);
@@ -116,8 +122,72 @@ function Search() {
   }, []);
 
   useEffect(() => {
+    if (!user) return;
+    fetch(`${import.meta.env.VITE_API_URL}/api/trips`, { credentials: 'include' })
+      .then(res => res.json())
+      .then(data => setUserTrips(Array.isArray(data) ? data : []))
+      .catch(() => {});
+  }, [user]);
+
+  useEffect(() => {
     if (hasInput) setActiveRoute(null);
   }, [hasInput]);
+
+  const addParksToTrip = async (tripId, parks) => {
+    for (const park of parks) {
+      try {
+        await fetch(`${import.meta.env.VITE_API_URL}/api/trips/${tripId}/parks`, {
+          method: 'POST',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            npsId: park.parkCode,
+            name: park.fullName,
+            states: park.states,
+            latitude: park.latitude,
+            longitude: park.longitude,
+            description: park.description,
+            imageUrl: park.images?.[0]?.url || null,
+          }),
+        });
+      } catch {
+        // continue adding remaining parks even if one fails
+      }
+    }
+  };
+
+  const handleCreateTrip = async (route, parks) => {
+    setSavingRoute(true);
+    try {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/trips`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: route.name }),
+      });
+      if (!res.ok) throw new Error('Failed to create trip');
+      const newTrip = await res.json();
+      await addParksToTrip(newTrip.id, parks);
+      setUserTrips(prev => [...prev, newTrip]);
+      setRouteSaved(true);
+      setTimeout(() => setRouteSaved(false), 3000);
+    } catch {
+      // silently fail for now
+    } finally {
+      setSavingRoute(false);
+    }
+  };
+
+  const handleAddAllToTrip = async (tripId, parks) => {
+    setAddingToTripId(tripId);
+    try {
+      await addParksToTrip(tripId, parks);
+      setRouteSaved(true);
+      setTimeout(() => setRouteSaved(false), 3000);
+    } finally {
+      setAddingToTripId(null);
+    }
+  };
 
   const buildUrl = (q, state, startIndex) => {
     const params = new URLSearchParams({ start: startIndex, limit: LIMIT });
@@ -251,15 +321,52 @@ function Search() {
       {!hasInput && activeRoute && (
         <>
           <button
-            onClick={() => setActiveRoute(null)}
+            onClick={() => { setActiveRoute(null); setRouteSaved(false); }}
             className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors mb-6"
           >
             <ArrowLeft className="w-4 h-4" />
             Back to Discover
           </button>
-          <div className="mb-6">
-            <h2 className="text-2xl font-bold mb-1">{activeRoute.name}</h2>
-            <p className="text-muted-foreground text-sm">{activeRoute.description}</p>
+          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-6">
+            <div>
+              <h2 className="text-2xl font-bold mb-1">{activeRoute.name}</h2>
+              <p className="text-muted-foreground text-sm">{activeRoute.description}</p>
+            </div>
+            {user && (
+              <div className="flex items-center gap-2 flex-shrink-0">
+                {routeSaved ? (
+                  <span className="flex items-center gap-1.5 text-sm text-green-600 dark:text-green-400">
+                    <Check className="w-4 h-4" /> Saved!
+                  </span>
+                ) : (
+                  <>
+                    <button
+                      onClick={() => handleCreateTrip(activeRoute, routeParks)}
+                      disabled={savingRoute || !!addingToTripId}
+                      className="px-3 py-1.5 text-sm bg-primary text-primary-foreground rounded-md hover:bg-primary/90 disabled:opacity-50 transition-colors whitespace-nowrap"
+                    >
+                      {savingRoute ? 'Saving...' : '+ Create Trip'}
+                    </button>
+                    {userTrips.length > 0 && (
+                      <select
+                        defaultValue=""
+                        disabled={savingRoute || !!addingToTripId}
+                        onChange={e => {
+                          if (e.target.value) handleAddAllToTrip(e.target.value, routeParks);
+                          e.target.value = '';
+                        }}
+                        className="px-3 py-1.5 text-sm rounded-md border border-input bg-background focus:outline-none focus:ring-2 focus:ring-ring text-foreground disabled:opacity-50"
+                      >
+                        <option value="" disabled>{addingToTripId ? 'Adding...' : 'Add all to...'}</option>
+                        {userTrips.map(trip => (
+                          <option key={trip.id} value={trip.id}>{trip.name}</option>
+                        ))}
+                      </select>
+                    )}
+                  </>
+                )}
+              </div>
+            )}
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {routeParks.map(park => (
