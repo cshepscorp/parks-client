@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '../hooks/useAuth';
 import ParkCard from '@/components/ParkCard';
+import { mockParks } from '#src/api/mockParks.js';
 
 function Home() {
   const { user } = useAuth();
@@ -15,6 +16,8 @@ function Home() {
   const [heroIndex, setHeroIndex] = useState(0);
   const LIMIT = 9;
 
+  const offlineMode = false; // set to true to use mock data and avoid hitting API rate limits during development
+
   const heroImages = [
     'https://www.nps.gov/common/uploads/structured_data/68BFC1AC-BF96-629F-89D261D78F181C64.jpg',
     'https://www.nps.gov/common/uploads/structured_data/3C7B477B-1DD8-B71B-0BCB48E009241BAA.jpg',
@@ -26,7 +29,10 @@ function Home() {
     const res = await fetch(`${import.meta.env.VITE_API_URL}/api/parks?limit=${LIMIT}&start=${startIndex}`);
     const data = await res.json();
     const newParks = data.data || [];
-    setParks(prev => startIndex === 0 ? newParks : [...prev, ...newParks]);
+
+    const parksToUse = offlineMode ? mockParks : newParks;
+    
+    setParks(prev => startIndex === 0 ? parksToUse : [...prev, ...parksToUse]);
     setStart(startIndex + LIMIT);
     setHasMore(newParks.length === LIMIT);
   };
@@ -53,7 +59,7 @@ function Home() {
     <>
       {/* Hero */}
       <div
-        className="flex flex-col justify-end pb-12 pt-48 gap-4 sm:gap-6 mb-12 relative overflow-hidden"
+        className="flex flex-col justify-end pb-20 sm:pb-28 pt-24 gap-4 sm:gap-6 relative overflow-hidden"
         style={{
           backgroundImage: `url(${heroImages[heroIndex]})`,
           backgroundSize: 'cover',
@@ -61,7 +67,7 @@ function Home() {
           minHeight: '600px',
         }}
       >
-        <div className="absolute inset-0 bg-black/50" />
+        <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-black/50 to-black/80 dark:to-background" />
 
         {/* <div className="w-full max-w-6xl mx-auto px-6 relative z-10 flex flex-col gap-4 sm:gap-6"> */}
           <div className="w-full max-w-6xl mx-auto px-6 relative z-10 flex flex-col gap-4 sm:gap-6 items-start sm:items-center text-left sm:text-center">
@@ -96,7 +102,7 @@ function Home() {
       </div>
 
       {/* Featured Parks */}
-      <div className="max-w-6xl mx-auto px-6">
+      <div className="max-w-6xl mx-auto px-6 pt-10">
         <div className="mb-6">
           <h2 className="text-2xl font-semibold mb-6">Featured Parks</h2>
           {!loading && parks.length === 0 && (

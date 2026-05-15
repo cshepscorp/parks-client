@@ -6,7 +6,7 @@ import {
     AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
     AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { DndContext, closestCenter, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
+import { DndContext, closestCenter, PointerSensor, TouchSensor, useSensor, useSensors } from '@dnd-kit/core';
 import { SortableContext, horizontalListSortingStrategy, useSortable, arrayMove } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import Map, { Marker, Source, Layer } from 'react-map-gl/mapbox';
@@ -38,14 +38,14 @@ function SortableParkThumb({ tp, onRemove, onNavigate }) {
             <div
                 {...attributes}
                 {...listeners}
-                className="absolute top-1 left-1 bg-black/50 rounded p-0.5 cursor-grab active:cursor-grabbing opacity-0 group-hover/park:opacity-100 transition-opacity"
+                className="absolute top-1 left-1 bg-black/50 rounded p-0.5 cursor-grab active:cursor-grabbing opacity-100 sm:opacity-0 sm:group-hover/park:opacity-100 transition-opacity"
             >
                 <GripVertical className="w-3 h-3 text-white" />
             </div>
 
             <button
                 onClick={(e) => { e.stopPropagation(); onRemove(); }}
-                className="absolute top-1 right-1 bg-black/50 rounded-full p-0.5 opacity-0 group-hover/park:opacity-100 transition-opacity"
+                className="absolute top-1 right-1 bg-black/50 rounded-full p-0.5 opacity-100 sm:opacity-0 sm:group-hover/park:opacity-100 transition-opacity"
             >
                 <span className="text-white text-xs leading-none">✕</span>
             </button>
@@ -128,7 +128,8 @@ function Trips() {
     const [error, setError] = useState(null);
 
     const sensors = useSensors(
-        useSensor(PointerSensor, { activationConstraint: { distance: 8 } })
+        useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
+        useSensor(TouchSensor, { activationConstraint: { delay: 200, tolerance: 5 } })
     );
 
     const toggleMap = (tripId) => {

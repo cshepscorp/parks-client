@@ -2,7 +2,7 @@ import { useEffect, useState, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useDebounce } from '../hooks/useDebounce';
 import ParkCard from '../components/ParkCard';
-// import { mockParks } from '../api/mockParks';
+import { mockParks } from '../api/mockParks';
 
 function Search() {
   const [searchParams] = useSearchParams();
