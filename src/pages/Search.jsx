@@ -108,6 +108,15 @@ function Search() {
   const debouncedQuery = useDebounce(query, 300);
   const hasInput = debouncedQuery.length >= 3 || stateCode !== '';
 
+  // Activate a route when linked from Home page (/search?route=southwest)
+  useEffect(() => {
+    const routeId = searchParams.get('route');
+    if (routeId) {
+      const found = ROUTES.find(r => r.id === routeId);
+      if (found) setActiveRoute(found);
+    }
+  }, []);
+
   useEffect(() => {
     const allCodes = [...new Set([...POPULAR_PARK_CODES, ...ROUTES.flatMap(r => r.parkCodes)])];
     fetch(`${import.meta.env.VITE_API_URL}/api/parks?parkCodes=${allCodes.join(',')}&limit=50`)
