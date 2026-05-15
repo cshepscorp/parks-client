@@ -7,7 +7,7 @@ import {
     AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { DndContext, closestCenter, PointerSensor, TouchSensor, useSensor, useSensors } from '@dnd-kit/core';
-import { SortableContext, horizontalListSortingStrategy, useSortable, arrayMove } from '@dnd-kit/sortable';
+import { SortableContext, rectSortingStrategy, useSortable, arrayMove } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import Map, { Marker, Source, Layer } from 'react-map-gl/mapbox';
 import 'mapbox-gl/dist/mapbox-gl.css';
@@ -38,7 +38,8 @@ function SortableParkThumb({ tp, onRemove, onNavigate }) {
             <div
                 {...attributes}
                 {...listeners}
-                className="absolute top-1 left-1 bg-black/50 rounded p-0.5 cursor-grab active:cursor-grabbing opacity-100 sm:opacity-0 sm:group-hover/park:opacity-100 transition-opacity"
+                style={{ touchAction: 'none' }}
+            className="absolute top-1 left-1 bg-black/50 rounded p-0.5 cursor-grab active:cursor-grabbing opacity-100 sm:opacity-0 sm:group-hover/park:opacity-100 transition-opacity"
             >
                 <GripVertical className="w-3 h-3 text-white" />
             </div>
@@ -354,9 +355,9 @@ function Trips() {
                         >
                             <SortableContext
                                 items={trip.tripParks.map(tp => tp.id)}
-                                strategy={horizontalListSortingStrategy}
+                                strategy={rectSortingStrategy}
                             >
-                                <div className="flex gap-2 overflow-x-auto pb-2">
+                                <div className="flex flex-wrap gap-2 sm:flex-nowrap sm:overflow-x-auto sm:pb-2">
                                     {trip.tripParks.map(tp => (
                                         <SortableParkThumb
                                             key={tp.id}
